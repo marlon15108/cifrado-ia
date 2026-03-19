@@ -1,24 +1,21 @@
 import streamlit as st
 import joblib
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier  # o el modelo que uses
 
-st.title("🔐 Detector de Cifrados con IA")
+st.set_page_config(page_title="Cifrado IA", page_icon="🔐")
 
-# Cargar modelo con control de error
+st.title("🔐 Aplicación de Cifrado con IA")
+st.write("Bienvenido a la aplicación de cifrado")
+
+# Cargar modelo
 try:
-    model = joblib.load("modelo_entrenado.pkl")
-    st.success("Modelo cargado correctamente")
+    modelo = joblib.load("modelo_entrenado.pkl")
+    st.success("✅ Modelo cargado correctamente")
 except Exception as e:
-    st.error(f"Error cargando modelo: {e}")
-    st.stop()
+    st.error(f"❌ Error al cargar el modelo: {e}")
 
-texto = st.text_area("Ingresa el texto:")
-
-if st.button("Analizar"):
-    if texto:
-        try:
-            resultado = model.predict([texto])
-            st.success(f"Resultado: {resultado[0]}")
-        except Exception as e:
-            st.error(f"Error en predicción: {e}")
-    else:
-        st.warning("Ingresa un texto")
+# Interfaz simple
+texto = st.text_input("Ingresa texto para procesar:")
+if st.button("Procesar"):
+    st.write(f"Procesando: {texto}")
