@@ -1,8 +1,8 @@
 import streamlit as st
-import pickle
+import joblib
 
-# Cargar modelo
-model = pickle.load(open("modelo_entrenado.pkl", "rb"))
+# Cargar modelo correctamente
+model = joblib.load("modelo_entrenado.pkl")
 
 st.title("🔐 Detector de Cifrados con IA")
 

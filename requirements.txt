@@ -3,3 +3,5 @@ uvicorn
 scikit-learn
 joblib
 pandas
+joblib
+scikit-learn==1.6.1
