@@ -66,7 +66,7 @@ def descifrar_mensaje(texto, algo_id):
     except:
         return "⚠️ Formato no compatible para descifrado automático."
 
-# 5. RUTA (Ahora que 'app' ya existe, funcionará)
+
 @app.post("/procesar")
 async def procesar(entrada: Entrada):
     datos = extraer_17_caracteristicas(entrada.texto)
