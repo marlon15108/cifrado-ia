@@ -4,7 +4,11 @@ import joblib
 import numpy as np
 import math
 import base64
+import sqlite3
+from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
+
+DB_PATH = "app_data.db"
 
 # 1. CREAR LA APLICACIÓN (Esto debe ir antes de cualquier @app)
 app = FastAPI()
@@ -17,7 +21,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3. CARGAR EL MODELO
+# 3. BASE DE DATOS
+
+def init_database():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS solicitudes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            entrada TEXT NOT NULL,
+            algoritmo TEXT NOT NULL,
+            resultado TEXT NOT NULL,
+            fecha_hora TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+def guardar_registro(entrada, algoritmo, resultado):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO solicitudes (entrada, algoritmo, resultado, fecha_hora) VALUES (?, ?, ?, ?)",
+        (entrada, algoritmo, resultado, datetime.utcnow().isoformat()),
+    )
+    conn.commit()
+    conn.close()
+
+
+init_database()
+
+# 4. CARGAR EL MODELO
 try:
     model = joblib.load("modelo_entrenado.pkl")
     print("✅ IA cargada correctamente")
@@ -74,7 +111,33 @@ async def procesar(entrada: Entrada):
     
     nombres = {0: "Texto Plano", 1: "Sustitución", 2: "César", 3: "Base64", 4: "Binario"}
     
-    return {
+    resultado_descifrado = descifrar_mensaje(entrada.texto, id_detectado)
+    respuesta = {
         "algoritmo": nombres.get(id_detectado, "Desconocido"),
-        "original": descifrar_mensaje(entrada.texto, id_detectado)
+        "original": resultado_descifrado
     }
+
+    guardar_registro(entrada.texto, respuesta["algoritmo"], respuesta["original"])
+    return respuesta
+
+
+@app.get("/historial")
+async def historial(limit: int = 20):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id, entrada, algoritmo, resultado, fecha_hora FROM solicitudes ORDER BY id DESC LIMIT ?",
+        (limit,)
+    )
+    filas = cursor.fetchall()
+    conn.close()
+    return [
+        {
+            "id": fila[0],
+            "entrada": fila[1],
+            "algoritmo": fila[2],
+            "resultado": fila[3],
+            "fecha_hora": fila[4],
+        }
+        for fila in filas
+    ]
